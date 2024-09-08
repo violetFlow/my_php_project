@@ -2,8 +2,10 @@
 
 namespace App;
 
-class Example {
-    public function sayHello() {
+class Example
+{
+    public function sayHello()
+    {
         return "Hello, World!";
     }
 }

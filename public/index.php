@@ -1,28 +1,127 @@
 <?php
-require_once __DIR__ . '/../vendor/autoload.php';
 
+use DI\Container;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Factory\AppFactory;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+// Application Class
 use App\Example;
 use App\Encrypt;
 use App\Decrypt;
 
-$example = new Example();
-echo $example->sayHello();
-echo "<br>";
+// dotenv settings
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
 
-// URLを暗号化するデータとキーを定義
-$url = "https://example.com/coupons?user=hahaha716";
-$key = "mysecretkey12345"; // 16文字のキー
+// Create Container using PHP-DI
+$container = new Container();
+AppFactory::setContainer($container);
 
-// URL暗号化
-$encrypt = new Encrypt();
-$encrypted_url = $encrypt->encrypt_url($url, $key);
-echo "暗号化されたURL: " . $encrypted_url;
-echo "<br>";
+$container->set('db', function () {
+    $host = $_ENV['DB_HOST'];
+    $dbname = $_ENV['DB_NAME'];
+    $username = $_ENV['DB_USER'];
+    $password = $_ENV['DB_PASS'];
+    $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
 
-// URL複合化
-$decrypt = new Decrypt();
-$decrypted_url = $decrypt->decrypt_url($encrypted_url, $key);
-echo "複合化されたURL: " . $decrypted_url;
-echo "<br>";
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ];
 
-?>
+    try {
+        return new PDO($dsn, $username, $password, $options);
+    } catch (\PDOException $e) {
+        throw new \PDOException($e->getMessage(), (int)$e->getCode());
+    }
+});
+
+/**
+ * Instantiate App
+ *
+ * In order for the factory to work you need to ensure you have installed
+ * a supported PSR-7 implementation of your choice e.g.: Slim PSR-7 and a supported
+ * ServerRequest creator (included with Slim PSR-7)
+ *
+ * PSR-7の主な目的は、異なるフレームワークやライブラリ間でHTTPメッセージを扱うときに、統一されたインターフェースを提供し、互換性と再利用性を向上させることです。
+ */
+$app = AppFactory::create();
+
+/**
+  * The routing middleware should be added earlier than the ErrorMiddleware
+  * Otherwise exceptions thrown from it will not be handled by the middleware
+  *
+  * ミドルウェアは、リクエストやレスポンスに対して追加の処理を行う小さなコンポーネントです。
+  * ミドルウェアは、リクエストがルートに到達する前やレスポンスがクライアントに送信される前に実行されるため、例えば、認証、ロギング、CORSの設定、エラーハンドリングなどの処理を担当することができます。
+  */
+$app->addRoutingMiddleware();
+
+/**
+ * Add Error Middleware
+ *
+ * @param bool                  $displayErrorDetails -> Should be set to false in production
+ * @param bool                  $logErrors -> Parameter is passed to the default ErrorHandler
+ * @param bool                  $logErrorDetails -> Display error details in error log
+ * @param LoggerInterface|null  $logger -> Optional PSR-3 Logger
+ *
+ * Note: This middleware should be added last. It will not handle any exceptions/errors
+ * for middleware added after it.
+ */
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+
+$encrypt_key = $_ENV['ENCRYPT_KEY'];
+
+// Define app routes
+$app->get('/hello/{name}', function (Request $request, Response $response, $args) {
+    $name = $args['name'];
+    if (empty($name)) {
+        $response->getBody()->write("401: Please Input correct name");
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(401);
+    }
+    $response->getBody()->write("Hello, $name");
+    return $response;
+});
+
+$app->get('/users', function (Request $request, Response $response, $args) {
+    $db = $this->get('db');
+    $stmt = $db->query('SELECT * FROM users');
+    $users = $stmt->fetchAll();
+
+    $response->getBody()->write(json_encode($users));
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+$app->get('/encrypt/{encrypt_txt}', function (Request $request, Response $response, $args) use ($encrypt_key) {
+    $encrypt_txt = $args['encrypt_txt'];
+
+    // URL暗号化
+    $encrypt = new Encrypt();
+    $encrypted_url = $encrypt->encrypt_url($encrypt_txt, $encrypt_key);
+    $response->getBody()->write($encrypted_url);
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+$app->get('/decrypt/{encrypted_url}', function (Request $request, Response $response, $args) use ($encrypt_key) {
+    $encrypted_url = $args['encrypted_url'];
+
+    // URL複合化
+    $decrypt = new Decrypt();
+    $decrypted_url = $decrypt->decrypt_url($encrypted_url, $encrypt_key);
+    $response->getBody()->write($decrypted_url);
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+$app->get('/say-hello', function (Request $request, Response $response, $args) {
+    $example = new Example();
+    $response->getBody()->write($example->sayHello());
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+// Run app
+$app->run();
