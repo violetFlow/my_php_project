@@ -1,44 +1,16 @@
 <?php
-
-use DI\Container;
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// Application Class
-use App\Example;
-use App\Encrypt;
-use App\Decrypt;
-
-// dotenv settings
+// 環境変数の読み込み
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-// Create Container using PHP-DI
-$container = new Container();
+// DIコンテナの読み込み
+$container = require __DIR__ . '/../config/dependencies.php';
 AppFactory::setContainer($container);
 
-$container->set('db', function () {
-    $host = $_ENV['DB_HOST'];
-    $dbname = $_ENV['DB_NAME'];
-    $username = $_ENV['DB_USER'];
-    $password = $_ENV['DB_PASS'];
-    $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
-
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
-
-    try {
-        return new PDO($dsn, $username, $password, $options);
-    } catch (\PDOException $e) {
-        throw new \PDOException($e->getMessage(), (int)$e->getCode());
-    }
-});
 
 /**
  * Instantiate App
@@ -73,55 +45,16 @@ $app->addRoutingMiddleware();
  */
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
-$encrypt_key = $_ENV['ENCRYPT_KEY'];
+// cors
+require __DIR__ . '/../src/Middleware/corsMiddleware.php';
+$app->add('addCorsHeaders');
 
-// Define app routes
-$app->get('/hello/{name}', function (Request $request, Response $response, $args) {
-    $name = $args['name'];
-    if (empty($name)) {
-        $response->getBody()->write("401: Please Input correct name");
-        return $response
-            ->withHeader('Content-Type', 'application/json')
-            ->withStatus(401);
-    }
-    $response->getBody()->write("Hello, $name");
-    return $response;
-});
+// API KEY
+require __DIR__ . '/../src/Middleware/apiKeyMiddleware.php';
 
-$app->get('/users', function (Request $request, Response $response, $args) {
-    $db = $this->get('db');
-    $stmt = $db->query('SELECT * FROM users');
-    $users = $stmt->fetchAll();
+// ルート定義ファイルを読み込む
+require __DIR__ . '/../src/Routes/routes.php';
 
-    $response->getBody()->write(json_encode($users));
-    return $response->withHeader('Content-Type', 'application/json');
-});
 
-$app->get('/encrypt/{encrypt_txt}', function (Request $request, Response $response, $args) use ($encrypt_key) {
-    $encrypt_txt = $args['encrypt_txt'];
-
-    // URL暗号化
-    $encrypt = new Encrypt();
-    $encrypted_url = $encrypt->encrypt_url($encrypt_txt, $encrypt_key);
-    $response->getBody()->write($encrypted_url);
-    return $response->withHeader('Content-Type', 'application/json');
-});
-
-$app->get('/decrypt/{encrypted_url}', function (Request $request, Response $response, $args) use ($encrypt_key) {
-    $encrypted_url = $args['encrypted_url'];
-
-    // URL複合化
-    $decrypt = new Decrypt();
-    $decrypted_url = $decrypt->decrypt_url($encrypted_url, $encrypt_key);
-    $response->getBody()->write($decrypted_url);
-    return $response->withHeader('Content-Type', 'application/json');
-});
-
-$app->get('/say-hello', function (Request $request, Response $response, $args) {
-    $example = new Example();
-    $response->getBody()->write($example->sayHello());
-    return $response->withHeader('Content-Type', 'application/json');
-});
-
-// Run app
+// アプリケーションを実行
 $app->run();
