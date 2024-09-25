@@ -1,9 +1,11 @@
 <?php
-use Psr\Http\Message\ResponseInterface as Response;
+
+use Slim\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 
-function apiKeyMiddleware(Request $request, RequestHandler $handler): Response {
+function apiKeyMiddleware(Request $request, RequestHandler $handler): Response
+{
     // 設定したAPIキー（通常は環境変数などに保存します）
     $validApiKey = $_ENV['API_KEY'];  // 本番環境では.envファイルや環境変数に保存する
 

@@ -1,18 +1,43 @@
 <?php
 
-// PHPのnamespaceは、名前の衝突を避けるために、コードを論理的にグループ化するための機能です。
-namespace App;
+namespace App\Services;
 
-class Encrypt
+class CommonService
 {
-    function encrypt_url($url, $key)
+    private $pdo;
+
+    // コンストラクタでPDOインスタンスを注入
+    public function __construct($pdo)
     {
+        $this->pdo = $pdo;
+    }
+
+    /**
+     * 挨拶のメッセージを作る
+     * @param $name 挨拶する相手
+     * @return 挨拶のメッセージ
+     */
+    public function getHelloMsg($name)
+    {
+        return "Hello, $name";
+    }
+
+    /**
+     * 暗号化する
+     * @param $encryptTxt 暗号化したいテキスト
+     * @return 暗号化されたテキスト
+     */
+    public function encrypt($encryptTxt)
+    {
+        // 暗号化キー
+        $encryptKey = $_ENV['ENCRYPT_KEY'];
+
         // check params
-        if (empty($url)) {
+        if (empty($encryptTxt)) {
             return '';
         }
 
-        if (empty($key)) {
+        if (empty($encryptKey)) {
             return '';
         }
 
@@ -34,7 +59,7 @@ class Encrypt
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cipher));
 
         // データを暗号化
-        $encrypted = openssl_encrypt($url, $cipher, $key, 0, $iv);
+        $encrypted = openssl_encrypt($encryptTxt, $cipher, $encryptKey, 0, $iv);
 
         // 暗号化データと初期ベクトルを統合して返す
 
@@ -47,5 +72,31 @@ class Encrypt
         エンコード後のデータは、元のバイナリデータよりも約33％大きくなるという特徴がありますが、テキストとして扱えるため、用途によっては便利です。
         */
         return base64_encode($encrypted . '::' . $iv);
+    }
+
+    /**
+     * 複合化する
+     * @param $decryptTxt 複合化したいテキスト
+     * @return 複合化されたテキスト
+     */
+    public function decrypt($decryptTxt)
+    {
+        // 暗号化キー
+        $encryptKey = $_ENV['ENCRYPT_KEY'];
+
+        // check params
+        if (empty($decryptTxt)) {
+            return '';
+        }
+
+        if (empty($encryptKey)) {
+            return '';
+        }
+
+        // 暗号化データを分割（暗号化データと初期ベクトル）
+        list($encrtypted_data, $iv) = explode('::', base64_decode($decryptTxt), 2);
+
+        // データの複合化
+        return openssl_decrypt($encrtypted_data, "AES-128-CBC", $encryptKey, 0, $iv);
     }
 }

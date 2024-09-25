@@ -16,18 +16,19 @@ class UsersSeeder extends AbstractSeed
      */
     public function run(): void
     {
+        $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
+        $dotenv->load();
+        $adminPassword = $_ENV['ADMIN_PASSWORD'];
+        $hashedPassword = password_hash($adminPassword, PASSWORD_DEFAULT);
+
         // 挿入するデータ
         $data = [
             [
                 'id' => 1,
-                'name' => 'John Doe',
-                'email' => 'john@example.com'
+                'name' => 'admin',
+                'email' => 'admin@example.com',
+                'password' => $hashedPassword,
             ],
-            [
-                'id' => 2,
-                'name' => 'Jane Smith',
-                'email' => 'jane@example.com'
-            ]
         ];
 
         // users テーブルにデータを挿入

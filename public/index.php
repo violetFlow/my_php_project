@@ -1,4 +1,5 @@
 <?php
+
 use Slim\Factory\AppFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -10,7 +11,6 @@ $dotenv->load();
 // DIコンテナの読み込み
 $container = require __DIR__ . '/../config/dependencies.php';
 AppFactory::setContainer($container);
-
 
 /**
  * Instantiate App
@@ -52,9 +52,16 @@ $app->add('addCorsHeaders');
 // API KEY
 require __DIR__ . '/../src/Middleware/apiKeyMiddleware.php';
 
+// セッション
+ini_set('session.cookie_httponly', 1); // HttpOnly属性を追加
+ini_set('session.cookie_secure', 1);   // Secure属性を追加（HTTPS環境でのみ有効）
+ini_set('session.gc_maxlifetime', 1800); // 30分に設定
+ini_set('session.cookie_lifetime', 0);   // ブラウザを閉じるまでセッション有効
+session_start();
+require __DIR__ . '/../src/Middleware/sessionMiddleware.php';
+
 // ルート定義ファイルを読み込む
 require __DIR__ . '/../src/Routes/routes.php';
-
 
 // アプリケーションを実行
 $app->run();

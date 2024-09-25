@@ -14,9 +14,13 @@
     "scripts" : {
         "start": "php -S localhost:8080",
         "test": "phpunit tests",
-        "format-src": "./vendor/bin/phpcs --standard=PSR12 src/",
-        "format-public": "./vendor/bin/phpcs --standard=PSR12 public/",
-        "migrate": "./vendor/bin/phinx migrate"
+        "check-src": "./vendor/bin/phpcs --standard=PSR12 src/",
+        "format-src": "./vendor/bin/phpcbf --standard=PSR12 src/",
+        "check-public": "./vendor/bin/phpcs --standard=PSR12 public/",
+        "format-public": "./vendor/bin/phpcbf --standard=PSR12 public/",
+        "migrate": "./vendor/bin/phinx migrate",
+        "rollback": "./vendor/bin/phinx rollback",
+        "seed:run": "./vendor/bin/phinx seed:run"
     },
     "require": {
         "monolog/monolog": "^3.7",
