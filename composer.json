@@ -30,9 +30,13 @@
         "php-di/slim-bridge": "^3.4",
         "robmorgan/phinx": "^0.16.2",
         "symfony/yaml": "^7.1",
-        "respect/validation": "^2.3"
+        "respect/validation": "^2.3",
+        "jangregor/phpstan-prophecy": "^1.0",
+        "phpspec/prophecy-phpunit": "^2.2",
+        "zircote/swagger-php": "^4.10"
     },
     "require-dev": {
-        "squizlabs/php_codesniffer": "*"
+        "squizlabs/php_codesniffer": "*",
+        "phpunit/phpunit": "^11.3"
     }
 }

@@ -6,7 +6,14 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use App\Services\UserService;
 use App\Validators\UserValidator;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Info(
+ *     title="My First API",
+ *     version="0.1"
+ * )
+ */
 class UserController
 {
     private $userService;
@@ -17,16 +24,44 @@ class UserController
         $this->userService = $userService;
     }
 
-    // 全てのユーザーを取得するアクション
-    public function index(Request $request, Response $response, array $args): Response
+    /**
+     * @OA\Get(
+     *     path="/api/data.json",
+     *     @OA\Response(
+     *         response="200",
+     *         description="The data"
+     *     )
+     * )
+     */
+    public function index(Response $response): Response
     {
         $users = $this->userService->getAllUsers();
         $response->getBody()->write(json_encode($users));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    // ユーザーを1人作成するアクション
-    public function create(Request $request, Response $response, array $args): Response
+    /**
+     * ユーザーを１人取得するアクション
+     */
+    public function readOne(Response $response, array $args): Response
+    {
+        $id = $args['id'];
+        $errors = UserValidator::readOneValidate($id);
+
+        if (!empty($errors)) {
+            $response->getBody()->write(json_encode(['errors' => $errors]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        $user = $this->userService->getUserById($id);
+        $response->getBody()->write(json_encode($user));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * ユーザーを1人作成するアクション
+     */
+    public function create(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
         $errors = UserValidator::createValidate($data);
@@ -41,7 +76,47 @@ class UserController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    // ログイン
+    /**
+     * ユーザーを1人作成するアクション
+     */
+    public function update(Request $request, Response $response, array $args): Response
+    {
+        $id = $args['id'];
+        $data = $request->getParsedBody();
+        $errors = UserValidator::updateValidate($id, $data);
+
+        if (!empty($errors)) {
+            $response->getBody()->write(json_encode(['errors' => $errors]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        $rowCount = $this->userService->updateUser($id, $data);
+
+        $response->getBody()->write(json_encode(['row_count' => $rowCount]));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * ユーザーを1人削除するアクション
+     */
+    public function delete(Response $response, array $args): Response
+    {
+        $id = $args['id'];
+        $errors = UserValidator::deleteValidate($id);
+
+        if (!empty($errors)) {
+            $response->getBody()->write(json_encode(['errors' => $errors]));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        $rowCount = $this->userService->deleteUser($id);
+        $response->getBody()->write(json_encode(['row_count' => $rowCount]));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * ログイン
+     */
     public function login(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
@@ -65,8 +140,10 @@ class UserController
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 
-    // ログアウト
-    public function logout(Request $request, Response $response): Response
+    /**
+     * ログアウト
+     */
+    public function logout(Response $response): Response
     {
         $this->userService->logout();
 

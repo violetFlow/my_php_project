@@ -11,14 +11,21 @@ class User
         $this->pdo = $pdo;
     }
 
-    // 全てのユーザーを取得
+    /**
+     * ユーザーを全リスト取得するメソッド
+     * @return $users 全ユーザー情報
+     */
     public function getAllUsers()
     {
         $stmt = $this->pdo->query('SELECT id, name, email FROM users');
         return $stmt->fetchAll();
     }
 
-    // 特定のユーザーをIDで取得
+    /**
+     * ユーザーを1人取得するメソッド
+     * @param $id ユーザーID
+     * @return $user ユーザー情報
+     */
     public function getUserById($id)
     {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = :id');
@@ -26,7 +33,11 @@ class User
         return $stmt->fetch();
     }
 
-    // ユーザーを作成
+    /**
+     * ユーザーを1人作成するメソッド
+     * @param $data ユーザー情報
+     * @return $lastInsertId 最後に挿入されたユーザーID
+     */
     public function createUser($data)
     {
         // Hashing password
@@ -41,7 +52,12 @@ class User
         return $this->pdo->lastInsertId();
     }
 
-    // ユーザーを更新
+    /**
+     * ユーザーを1人更新するメソッド
+     * @param $id ユーザーID
+     * @param $data ユーザー情報
+     * @return $rowCount
+     */
     public function updateUser($id, $data)
     {
         $stmt = $this->pdo->prepare('UPDATE users SET name = :name, email = :email WHERE id = :id');
@@ -49,12 +65,15 @@ class User
             'id' => $id,
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
         ]);
         return $stmt->rowCount();
     }
 
-    // ユーザーを削除
+    /**
+     * ユーザーを1人削除するメソッド
+     * @param $id ユーザーID
+     * @return $rowCount
+     */
     public function deleteUser($id)
     {
         $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');

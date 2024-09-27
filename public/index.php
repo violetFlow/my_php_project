@@ -45,7 +45,7 @@ $app->addRoutingMiddleware();
  */
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
-// cors
+// CORS
 require __DIR__ . '/../src/Middleware/corsMiddleware.php';
 $app->add('addCorsHeaders');
 

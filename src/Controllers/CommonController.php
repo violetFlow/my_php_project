@@ -17,7 +17,10 @@ class CommonController
         $this->commonService = $commonService;
     }
 
-    public function hello(Request $request, Response $response, array $args): Response
+    /**
+     * 挨拶のメッセージを送信する
+     */
+    public function hello(Response $response, array $args): Response
     {
         $name = $args['name'];
         $errors = CommonValidator::helloValidate($name);
@@ -33,7 +36,10 @@ class CommonController
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 
-    public function encrypt(Request $request, Response $response, array $args): Response
+    /**
+     * 暗号化する
+     */
+    public function encrypt(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
         $errors = CommonValidator::encryptValidate($data['encryptTxt']);
@@ -50,7 +56,10 @@ class CommonController
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 
-    public function decrypt(Request $request, Response $response, array $args): Response
+    /**
+     * 複合化する
+     */
+    public function decrypt(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
         $errors = CommonValidator::decryptValidate($data['decryptTxt']);

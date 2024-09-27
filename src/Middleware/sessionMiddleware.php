@@ -6,6 +6,7 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 
 function sessionMiddleware(Request $request, RequestHandler $handler): Response
 {
+    // セッションにトークンが登録されたいない場合は認証エラーを返す
     if (!isset($_SESSION['token'])) {
         $response = new Response();
         $response->getBody()->write(json_encode(['error' => 'Unauthorized']));

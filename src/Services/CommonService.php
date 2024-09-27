@@ -15,7 +15,7 @@ class CommonService
     /**
      * 挨拶のメッセージを作る
      * @param $name 挨拶する相手
-     * @return 挨拶のメッセージ
+     * @return $stirng 挨拶のメッセージ
      */
     public function getHelloMsg($name)
     {
@@ -25,7 +25,7 @@ class CommonService
     /**
      * 暗号化する
      * @param $encryptTxt 暗号化したいテキスト
-     * @return 暗号化されたテキスト
+     * @return $string 暗号化されたテキスト
      */
     public function encrypt($encryptTxt)
     {
@@ -77,7 +77,7 @@ class CommonService
     /**
      * 複合化する
      * @param $decryptTxt 複合化したいテキスト
-     * @return 複合化されたテキスト
+     * @return $string 複合化されたテキスト
      */
     public function decrypt($decryptTxt)
     {
